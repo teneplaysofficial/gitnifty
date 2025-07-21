@@ -1,0 +1,39 @@
+{
+  "name": "gitnifty",
+  "displayName": "GitNifty",
+  "version": "0.0.0",
+  "description": "A robust, promise-based Git utility for Node.js",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TenEplaysOfficial/gitnifty.git"
+  },
+  "author": "Sriman <136729116+TenEplaysOfficial@users.noreply.github.com>",
+  "funding": {
+    "type": "github",
+    "url": "https://github.com/sponsors/TenEplaysOfficial"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "git",
+    "nodejs",
+    "gitnifty",
+    "utility",
+    "promise-based",
+    "node-git",
+    "git-utility",
+    "git-api",
+    "git-commands",
+    "git-helper",
+    "git-automation"
+  ],
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {},
+  "dependencies": {},
+  "devDependencies": {}
+}
