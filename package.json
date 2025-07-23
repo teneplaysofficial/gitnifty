@@ -33,7 +33,68 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {},
+  "scripts": {
+    "prepare": "husky",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "build": "tsc",
+    "docs": "typedoc index.ts --out docs --tsconfig tsconfig.json --readme README.md --gitRemote origin --gitRevision main --githubPages --cname gitnifty.js.org  --name GitNifty --hideGenerator --customFooterHtml \"<div style=\\\"text-align:center; padding:1rem;\\\">Made by <a href=\\\"https://github.com/TenEplaysOfficial/gitnifty\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">TenEplaysOfficial</a> • Released under <a href=\\\"https://github.com/TenEplaysOfficial/gitnifty/blob/main/LICENSE\\\" target=\\\"_blank\\\" rel=\\\"noopener noreferrer\\\">Apache License</a></div>\"",
+    "release": "release-it",
+    "lint": "biome lint",
+    "format": "biome format --write"
+  },
+  "lint-staged": {
+    "*.{js,ts,yml,json,md}": "yarn format",
+    "*.{ts}": "yarn lint"
+  },
+  "release-it": {
+    "git": {
+      "commitMessage": "chore: release v${version}",
+      "tagName": "v${version}"
+    },
+    "npm": {
+      "publish": false,
+      "tag": "beta"
+    },
+    "github": {
+      "release": true
+    },
+    "hooks": {
+      "before:init": "yarn test && yarn docs",
+      "before:commit": "git add .",
+      "after:release": "node -e \"const major = process.env.npm_package_version.split('.')[0]; require('child_process').execSync(`git tag -f v${major} && git push -f origin v${major}`, { stdio: 'inherit' })\""
+    }
+  },
+  "jest": {
+    "preset": "ts-jest/presets/default-esm",
+    "testEnvironment": "node",
+    "extensionsToTreatAsEsm": [
+      ".ts"
+    ],
+    "moduleNameMapper": {
+      "^(\\.{1,2}/.*)\\.js$": "$1"
+    },
+    "transform": {
+      "^.+\\.ts$": [
+        "ts-jest",
+        {
+          "useESM": true
+        }
+      ]
+    }
+  },
   "dependencies": {},
-  "devDependencies": {}
+  "devDependencies": {
+    "@biomejs/biome": "^2.1.2",
+    "@types/jest": "^30.0.0",
+    "@types/node": "^24.1.0",
+    "husky": "^9.1.7",
+    "jest": "^30.0.5",
+    "lint-staged": "^16.1.2",
+    "release-it": "^19.0.4",
+    "ts-jest": "^29.4.0",
+    "ts-node": "^10.9.2",
+    "typedoc": "^0.28.7",
+    "typescript": "^5.8.3"
+  }
 }
