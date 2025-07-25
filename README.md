@@ -39,9 +39,9 @@ import { Git } from "gitnifty";
 
 const git = new Git({ cwd: "/path/to/your/repo" });
 
-const username = await git.userName(); // e.g., 'John Doe'
-const branch = await git.currentBranch(); // e.g., 'main'
-const isClean = await git.isClean(); // true or false
+const username = await git.getUserName(); // e.g., 'John Doe'
+const branch = await git.getCurrentBranchName(); // e.g., 'main'
+const isClean = await git.isWorkingDirClean(); // true or false
 ```
 
 ### Async Usage
@@ -49,7 +49,7 @@ const isClean = await git.isClean(); // true or false
 ```ts
 async function main() {
   const git = new Git();
-  const userName = await git.userName();
+  const userName = await git.getUserName();
   console.log("Git User:", userName);
 }
 

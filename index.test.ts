@@ -74,7 +74,7 @@ describe("Git", () => {
         stderr: "Error: Git not installed",
       });
 
-      await expect(git.getUserName()).rejects.toContain(errorMessage);
+      await expect(git.getUserName()).rejects.toThrow(errorMessage);
     });
   });
 
@@ -99,7 +99,31 @@ describe("Git", () => {
         stderr: "Error: Email not configured",
       });
 
-      await expect(git.getUserEmail()).rejects.toContain(errorMessage);
+      await expect(git.getUserEmail()).rejects.toThrow(errorMessage);
+    });
+  });
+
+  describe("setUserName", () => {
+    it("should configure the user name globally", async () => {
+      mockExec({ stdout: "" });
+      await git.setUserName("Jane Doe");
+      expect(mockedExec).toHaveBeenCalledWith(
+        'git config --global user.name "Jane Doe" ',
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("setUserEmail", () => {
+    it("should configure the user email globally", async () => {
+      mockExec({ stdout: "" });
+      await git.setUserEmail("jane@example.com");
+      expect(mockedExec).toHaveBeenCalledWith(
+        'git config --global user.email "jane@example.com"',
+        { cwd: customCwd },
+        expect.any(Function),
+      );
     });
   });
 
@@ -229,7 +253,7 @@ describe("Git", () => {
         stderr: "Error: Not a Git repository",
       });
 
-      await expect(git.getCurrentBranchName()).rejects.toContain(errorMessage);
+      await expect(git.getCurrentBranchName()).rejects.toThrow(errorMessage);
     });
   });
 
@@ -261,7 +285,305 @@ describe("Git", () => {
         stderr: "Error: Not a Git repository",
       });
 
-      await expect(git.getDefaultBranchName()).rejects.toContain(errorMessage);
+      await expect(git.getDefaultBranchName()).rejects.toThrow(errorMessage);
+    });
+  });
+
+  describe("add", () => {
+    it("should stage a single file", async () => {
+      mockExec({ stdout: "success" });
+
+      const result = await git.add("README.md");
+      expect(result).toBe("success");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git add README.md ",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+
+    it("should stage multiple paths", async () => {
+      mockExec({ stdout: "success" });
+
+      await git.add(["src/", "docs/"]);
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git add src/ docs/ ",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+
+    it("should default to staging all files", async () => {
+      mockExec({ stdout: "all staged" });
+
+      const result = await git.add();
+      expect(result).toBe("all staged");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git add . ",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("reset", () => {
+    it("should reset to a commit without flags", async () => {
+      mockExec({ stdout: "reset done" });
+
+      const result = await git.reset("abc123");
+      expect(result).toBe("reset done");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git reset abc123",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+
+    it("should reset with a flag", async () => {
+      mockExec({ stdout: "hard reset" });
+
+      await git.reset("abc123", "--hard");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git reset --hard abc123",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("restore", () => {
+    it("should restore a single file", async () => {
+      mockExec({ stdout: "restored" });
+
+      const result = await git.restore("file.txt");
+      expect(result).toBe("restored");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git restore file.txt",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+
+    it("should restore with a flag", async () => {
+      mockExec({ stdout: "unstaged" });
+
+      await git.restore(".", "--staged");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git restore --staged .",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+
+    it("should restore multiple paths with flag", async () => {
+      mockExec({ stdout: "restored multiple" });
+
+      await git.restore(["src/", "docs/"], "--source=HEAD~1");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git restore --source=HEAD~1 src/ docs/",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("commit", () => {
+    it("should commit with a message only", async () => {
+      mockExec({ stdout: "committed" });
+
+      const result = await git.commit("feat: add feature");
+      expect(result).toBe(git);
+      expect(mockedExec).toHaveBeenCalledWith(
+        'git commit -m "feat: add feature"',
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+
+    it("should commit with message containing double quotes", async () => {
+      mockExec({ stdout: "escaped commit" });
+
+      await git.commit('fix: escape "quotes"');
+      expect(mockedExec).toHaveBeenCalledWith(
+        'git commit -m "fix: escape \\"quotes\\""',
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+
+    it("should commit with multiple flags", async () => {
+      mockExec({ stdout: "amended" });
+
+      await git.commit("fix: typo", ["--amend", "--no-edit"]);
+      expect(mockedExec).toHaveBeenCalledWith(
+        'git commit -m "fix: typo" --amend --no-edit',
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("init", () => {
+    it("should initialize a new Git repository", async () => {
+      mockExec({ stdout: "Initialized empty Git repository" });
+      const result = await git.init();
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git init",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe(git);
+    });
+  });
+
+  describe("clone", () => {
+    it("should clone a repository into a directory", async () => {
+      mockExec({ stdout: "Cloning into 'repo'..." });
+      const result = await git.clone(
+        "https://github.com/example/repo.git",
+        "repo",
+      );
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git clone https://github.com/example/repo.git repo",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe(git);
+    });
+
+    it("should clone a repository into current directory if no dir is specified", async () => {
+      mockExec({ stdout: "Cloning into '.'..." });
+      await git.clone("https://github.com/example/repo.git");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git clone https://github.com/example/repo.git ",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("push", () => {
+    it("should push to the default remote", async () => {
+      mockExec({ stdout: "pushed" });
+
+      const result = await git.push();
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git push origin",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe(git);
+    });
+
+    it("should push with flags", async () => {
+      mockExec({ stdout: "pushed with force" });
+
+      await git.push(["--force", "--tags"]);
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git push --force --tags origin",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("tag", () => {
+    it("should create a new tag", async () => {
+      mockExec({ stdout: "tagged" });
+
+      const result = await git.tag("v1.0.0");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git tag v1.0.0",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("tagged");
+    });
+
+    it("should create annotated tag with force", async () => {
+      mockExec({ stdout: "annotated tag" });
+
+      await git.tag("v1.0.0", ["--annotate", "--force"]);
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git tag --annotate --force v1.0.0",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("merge", () => {
+    it("should merge a branch", async () => {
+      mockExec({ stdout: "merged" });
+
+      const result = await git.merge("feature-branch");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git merge feature-branch",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("merged");
+    });
+
+    it("should merge with flags", async () => {
+      mockExec({ stdout: "merged no-ff" });
+
+      await git.merge("dev", ["--no-ff", "--edit"]);
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git merge --no-ff --edit dev",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("checkout", () => {
+    it("should checkout a branch", async () => {
+      mockExec({ stdout: "checked out" });
+
+      const result = await git.checkout("main");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git checkout main",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe(git);
+    });
+
+    it("should checkout with flags", async () => {
+      mockExec({ stdout: "checked out with orphan" });
+
+      await git.checkout("gh-pages", ["--orphan"]);
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git checkout --orphan gh-pages",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
+
+  describe("branch", () => {
+    it("should create a branch", async () => {
+      mockExec({ stdout: "branch created" });
+
+      const result = await git.branch("new-feature");
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git branch new-feature",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("branch created");
+    });
+
+    it("should delete a branch with flags", async () => {
+      mockExec({ stdout: "deleted branch" });
+
+      await git.branch("bugfix", ["-D"]);
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git branch -D bugfix",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
     });
   });
 });
