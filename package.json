@@ -52,7 +52,7 @@
     "format": "biome format --write"
   },
   "lint-staged": {
-    "*.{js,ts,yml,json,md}": "yarn format",
+    "*.{js,ts,json,md}": "yarn format",
     "*.{ts}": "yarn lint"
   },
   "release-it": {

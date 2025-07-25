@@ -4,8 +4,14 @@ description: This workflow runs tests on pull requests and pushes to the main br
 on:
   pull_request:
     types: [opened, synchronize, reopened]
+    paths:
+      - index.ts
+      - index.test.ts
   push:
     branches: [main]
+    paths:
+      - index.ts
+      - index.test.ts
 
 jobs:
   run_tests:
