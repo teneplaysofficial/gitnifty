@@ -198,6 +198,52 @@ export type BranchFlag =
   | "--list"
   | "--show-current";
 
+/**
+ * Flags used with the `git describe` command to modify its behavior.
+ *
+ * These control how Git generates the description of a commit.
+ *
+ * - `--tags`: Use any tag (including lightweight tags).
+ * - `--all`: Use any ref (tags, branches, etc.).
+ * - `--long`: Always output long format (tag + number of commits + hash).
+ * - `--dirty`: Mark the working tree as dirty if it has local changes.
+ * - `--exact-match`: Only output the tag if the commit matches exactly.
+ * - `--always`: Fallback to abbreviated commit hash if no tag is found.
+ * - `--first-parent`: Follow only the first parent upon traversal.
+ * - `--dirty=<mark>`: Use a custom suffix instead of "-dirty".
+ * - `--abbrev=<n>`: Set the hash abbreviation length.
+ * - `--match=<pattern>`: Only consider tags matching the given glob pattern.
+ * - `--candidates=<n>`: Limit the number of candidate tags considered.
+ *
+ * @see {@link Git.describe}
+ */
+export type DescribeFlag =
+  | "--tags"
+  | "--all"
+  | "--long"
+  | "--dirty"
+  | "--exact-match"
+  | "--always"
+  | "--first-parent"
+  | `--dirty=${string}`
+  | `--abbrev=${number}`
+  | `--match=${string}`
+  | `--candidates=${number}`;
+
+/**
+ * A Git reference to identify a specific commit, branch, or tag.
+ *
+ * This can be used to describe a commit other than the current `HEAD`.
+ *
+ * Common examples:
+ * - `"HEAD"`: The current commit.
+ * - `"HEAD~1"`: One commit before HEAD.
+ * - `"HEAD^2"`: Second parent of a merge commit.
+ * - `"main"` or any branch name.
+ * - A full or abbreviated commit SHA.
+ */
+export type GitRef = "HEAD" | `${"HEAD~" | "HEAD^"}${number}` | string;
+
 // ***** Git Class *****
 
 /**
@@ -293,6 +339,20 @@ export class Git {
         }
       });
     });
+  }
+
+  /**
+   * Normalizes a value into an array.
+   *
+   * @example
+   * toArray("--tags") // ["--tags"]
+   * toArray(["--tags", "--always"]) // ["--tags", "--always"]
+   *
+   * @param input - A single value or an array of values.
+   * @returns The input wrapped in an array, if not already.
+   */
+  private toArray<T>(input: T | T[]) {
+    return Array.isArray(input) ? input : [input];
   }
 
   /**
@@ -797,5 +857,52 @@ export class Git {
     const flagArr = Array.isArray(flags) ? flags : flags ? [flags] : [];
     const parts = ["git branch", ...flagArr, name].filter(Boolean);
     return this.runCommand(parts.join(" "));
+  }
+
+  /**
+   * Runs `git describe` to generate a human-readable identifier for a commit.
+   *
+   * This wraps the `git describe` command and returns a string such as
+   * `v1.2.3-2-gabcdef` based on the most recent tag and commit information.
+   *
+   * @param flags - One or more optional `git describe` flags to customize the output.
+   * Can be a single flag or an array of flags.
+   *
+   * @param ref - Optional Git reference to describe (e.g., a branch, tag, or commit hash).
+   * Defaults to `HEAD` if not provided.
+   *
+   * @returns A promise that resolves with the `git describe` output.
+   *
+   * @example
+   * ```ts
+   * await git.describe("--tags");
+   * await git.describe(["--tags", "--long"], "main");
+   * await git.describe(["--dirty=*", "--abbrev=10"], "HEAD~2");
+   * ```
+   *
+   * @see {@link https://git-scm.com/docs/git-describe Git Describe Docs}
+   */
+  describe(flags: DescribeFlag | DescribeFlag[], ref?: GitRef) {
+    const args = [...this.toArray(flags), ref].filter(Boolean);
+    return this.runCommand(`git describe ${args.join(" ")}`);
+  }
+
+  /**
+   * Retrieves the latest reachable Git tag (e.g., `v1.2.3`) without commit metadata.
+   *
+   * This uses `git describe --tags --abbrev=0` to return only the most recent tag name,
+   * ignoring additional suffixes like commit counts or hashes.
+   *
+   * @returns A promise that resolves with the latest tag as a string.
+   *
+   * @example
+   * ```ts
+   * await git.getLatestTag(); // "v1.2.3"
+   * ```
+   *
+   * @see {@link Git.describe}
+   */
+  getLatestTag() {
+    return this.describe(["--tags", "--abbrev=0"]);
   }
 }
