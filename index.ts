@@ -53,6 +53,12 @@ export type ResetFlag =
  * - `--progress`: Force progress reporting.
  * - `--source=<commit-ish>` – Restore from a specific commit, branch, or tag.
  *
+ * @example
+ * - `--source=HEAD` – Restore from the latest commit on current branch.
+ * - `--source=HEAD~1` – Restore from one commit before HEAD.
+ * - `--source=abc1234` – Restore from a specific commit hash.
+ * - `--source=main` – Restore from a named branch.
+ *
  * @see {@link Git.restore}
  */
 export type RestoreFlag =
@@ -60,28 +66,6 @@ export type RestoreFlag =
   | "--worktree"
   | "--quiet"
   | "--progress"
-  | SourceRef;
-
-/**
- * Represents a `--source=<commit-ish>` flag used in `git restore`.
- *
- * The `--source` flag specifies the commit, branch, or tag to restore files from.
- * Examples include:
- *
- * - `--source=HEAD` – Restore from the latest commit on current branch.
- * - `--source=HEAD~1` – Restore from one commit before HEAD.
- * - `--source=abc1234` – Restore from a specific commit hash.
- * - `--source=main` – Restore from a named branch.
- *
- * This type supports valid Git revisions via a template literal.
- *
- * @example
- * ```ts
- * const flag: SourceRef = "--source=HEAD~1";
- * ```
- */
-export type SourceRef =
-  | `--source=${string & { length: 7 | 40 }}`
   | "--source=HEAD"
   | `--source=HEAD~${number}`
   | `--source=${string}`;
