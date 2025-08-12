@@ -6,6 +6,6 @@
   "license": "Apache-2.0",
   "exports": "./index.ts",
   "publish": {
-    "include": ["index.ts"]
+    "include": ["index.ts", "README.md", "LICENSE"]
   }
 }
