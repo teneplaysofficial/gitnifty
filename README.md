@@ -4,13 +4,16 @@
 
 _A robust, promise-based Git utility for Node.js_
 
-[![npm version](https://img.shields.io/npm/v/gitnifty.svg?style=for-the-badge)](https://www.npmjs.com/package/gitnifty)
-[![License](https://img.shields.io/github/license/TenEplaysOfficial/gitnifty.svg?style=for-the-badge)](https://github.com/TenEplaysOfficial/gitnifty/blob/main/LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/TenEplaysOfficial/gitnifty?style=for-the-badge)](https://github.com/TenEplaysOfficial/gitnifty/stargazers)
-[![Downloads](https://img.shields.io/npm/dm/gitnifty?style=for-the-badge)](https://www.npmjs.com/package/gitnifty)
-[![Type Support](https://img.shields.io/badge/type-support-blue?style=for-the-badge)](https://github.com/TenEplaysOfficial/gitnifty)
-[![Sponsor](https://img.shields.io/badge/funding-sponsor-yellow?style=for-the-badge)](https://github.com/sponsors/TenEplaysOfficial)
-[![Follow @teneplays on X](https://img.shields.io/badge/follow-@teneplays-fff?logo=x&style=for-the-badge)](https://x.com/teneplays)
+[![Build](https://github.com/teneplaysofficial/gitnifty/actions/workflows/release.yml/badge.svg)](https://github.com/TenEplaysOfficial/gitnifty)
+[![npm version](https://img.shields.io/npm/v/gitnifty.svg)](https://www.npmjs.com/package/gitnifty)
+[![JSR](https://jsr.io/badges/@tene/gitnifty)](https://jsr.io/@tene/gitnifty)
+[![JSR Score](https://jsr.io/badges/@tene/gitnifty/score)](https://jsr.io/@tene/gitnifty)
+[![License](https://img.shields.io/github/license/TenEplaysOfficial/gitnifty.svg)](https://github.com/TenEplaysOfficial/gitnifty/blob/main/LICENSE)
+[![GitHub stars](https://img.shields.io/github/stars/TenEplaysOfficial/gitnifty?style=flat)](https://github.com/TenEplaysOfficial/gitnifty/stargazers)
+[![Downloads](https://img.shields.io/npm/dm/gitnifty)](https://www.npmjs.com/package/gitnifty)
+[![Type Support](https://img.shields.io/badge/type-support-blue)](https://github.com/TenEplaysOfficial/gitnifty)
+[![Sponsor](https://img.shields.io/badge/funding-sponsor-yellow)](https://github.com/sponsors/TenEplaysOfficial)
+[![Follow @teneplays on X](https://img.shields.io/badge/follow-@teneplays-fff?logo=x)](https://x.com/teneplays)
 
 </div>
 
