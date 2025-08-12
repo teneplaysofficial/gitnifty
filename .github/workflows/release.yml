@@ -42,3 +42,6 @@ jobs:
           echo "Package successfully published to NPM!"
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish to JSR
+        run: npx jsr publish

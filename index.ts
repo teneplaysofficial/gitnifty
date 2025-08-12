@@ -329,7 +329,7 @@ export class Git {
    *
    * @throws Throws an error with the command and stderr if execution fails.
    */
-  private runCommand(cmd: string) {
+  private runCommand(cmd: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       exec(cmd, { cwd: this.cwd }, (error, stdout, stderr) => {
         if (error) {
@@ -351,7 +351,7 @@ export class Git {
    * @param input - A single value or an array of values.
    * @returns The input wrapped in an array, if not already.
    */
-  private toArray<T>(input: T | T[]) {
+  private toArray<T>(input: T | T[]): T[] {
     return Array.isArray(input) ? input : [input];
   }
 
@@ -369,7 +369,7 @@ export class Git {
    * console.log(username); // "John Doe"
    * ```
    */
-  getUserName() {
+  getUserName(): Promise<string> {
     return this.runCommand("git config user.name");
   }
 
@@ -390,7 +390,7 @@ export class Git {
    * console.log(name); // "John Doe"
    * ```
    */
-  setUserName(name: string) {
+  setUserName(name: string): Promise<string> {
     return this.runCommand(`git config --global user.name "${name}" `);
   }
 
@@ -408,7 +408,7 @@ export class Git {
    * console.log(email); // "john.doe@example.com"
    * ```
    */
-  getUserEmail() {
+  getUserEmail(): Promise<string> {
     return this.runCommand("git config user.email");
   }
 
@@ -429,7 +429,7 @@ export class Git {
    * console.log(email); // "john.doe@example.com"
    * ```
    */
-  setUserEmail(email: string) {
+  setUserEmail(email: string): Promise<string> {
     return this.runCommand(`git config --global user.email "${email}"`);
   }
 
@@ -445,7 +445,7 @@ export class Git {
    * console.log(clean); // true if working directory has no unstaged changes
    * ```
    */
-  hasNoUnstagedChanges() {
+  hasNoUnstagedChanges(): Promise<boolean> {
     return this.tryCommand(() => this.runCommand("git diff --quiet"));
   }
 
@@ -461,7 +461,7 @@ export class Git {
    * console.log(clean); // true if nothing is staged for commit
    * ```
    */
-  hasNoStagedChanges() {
+  hasNoStagedChanges(): Promise<boolean> {
     return this.tryCommand(() => this.runCommand("git diff --cached --quiet"));
   }
 
@@ -480,7 +480,7 @@ export class Git {
    * @see {@link hasNoUnstagedChanges} To check if working directory has unstaged changes.
    * @see {@link hasNoStagedChanges} To check if working directory has staged but uncommitted changes.
    */
-  async isWorkingDirClean() {
+  async isWorkingDirClean(): Promise<boolean> {
     const unstagedClean = await this.hasNoUnstagedChanges();
     const stagedClean = await this.hasNoStagedChanges();
     return unstagedClean && stagedClean;
@@ -498,7 +498,7 @@ export class Git {
    * console.log(hasUpstream); // true (if upstream is set), false (if not)
    * ```
    */
-  hasUpstreamBranch() {
+  hasUpstreamBranch(): Promise<boolean> {
     return this.tryCommand(() =>
       this.runCommand("git rev-parse --abbrev-ref --symbolic-full-name @{u}"),
     );
@@ -518,7 +518,7 @@ export class Git {
    * console.log(branch); // "main"
    * ```
    */
-  getCurrentBranchName() {
+  getCurrentBranchName(): Promise<string> {
     return this.runCommand("git rev-parse --abbrev-ref HEAD");
   }
 
@@ -538,7 +538,7 @@ export class Git {
    * console.log(defaultBranch); // "main" or "master"
    * ```
    */
-  getDefaultBranchName = async () => {
+  getDefaultBranchName = async (): Promise<string> => {
     const branches = await this.runCommand("git branch -r");
     const defaultBranch = branches
       .split("\n")
@@ -569,7 +569,7 @@ export class Git {
    * await git.add(); // stages everything (default ".")
    * ```
    */
-  add(path: string | string[] = ".") {
+  add(path: string | string[] = "."): Promise<string> {
     const normalizedPath = Array.isArray(path) ? path.join(" ") : path;
     return this.runCommand(`git add ${normalizedPath} `);
   }
@@ -598,7 +598,7 @@ export class Git {
    * await git.reset("abc1234", "--hard"); // Hard reset to commit
    * ```
    */
-  reset(hashValue: string, flag?: ResetFlag) {
+  reset(hashValue: string, flag?: ResetFlag): Promise<string> {
     const parts = ["git reset", flag, hashValue].filter(Boolean);
     return this.runCommand(parts.join(" "));
   }
@@ -629,7 +629,10 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-restore | git restore - Official Git Docs}
    */
-  restore(target: string | string[] = ".", flag?: RestoreFlag) {
+  restore(
+    target: string | string[] = ".",
+    flag?: RestoreFlag,
+  ): Promise<string> {
     const normalizedTarget = Array.isArray(target) ? target.join(" ") : target;
     const flagPart = flag ? ` ${flag}` : "";
     return this.runCommand(`git restore${flagPart} ${normalizedTarget}`);
@@ -659,7 +662,10 @@ export class Git {
    * @see {@link CommitFlag} for supported commit flags
    * @see {@link https://git-scm.com/docs/git-commit Git Commit Docs}
    */
-  async commit(message: string, flags?: CommitFlag | CommitFlag[]) {
+  async commit(
+    message: string,
+    flags?: CommitFlag | CommitFlag[],
+  ): Promise<this> {
     const flagsPart = flags
       ? Array.isArray(flags)
         ? ` ${flags.join(" ")}`
@@ -685,7 +691,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-init Git Init Docs}
    */
-  async init() {
+  async init(): Promise<this> {
     await this.runCommand("git init");
     return this;
   }
@@ -705,7 +711,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-clone Git Clone Docs}
    */
-  async clone(url: string, dir: string = "") {
+  async clone(url: string, dir: string = ""): Promise<this> {
     await this.runCommand(`git clone ${url} ${dir}`);
     return this;
   }
@@ -732,7 +738,7 @@ export class Git {
     remote: string | PushFlag[] = "origin",
     branch = "",
     flags: PushFlag | PushFlag[] = [],
-  ) {
+  ): Promise<this> {
     let finalRemote = "origin";
     let finalBranch = "";
     let finalFlags: PushFlag[] = [];
@@ -775,7 +781,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-tag Git Tag Docs}
    */
-  tag(value: string, flags?: TagFlag | TagFlag[]) {
+  tag(value: string, flags?: TagFlag | TagFlag[]): Promise<string> {
     const flagStr = flags
       ? Array.isArray(flags)
         ? `${flags.join(" ")} `
@@ -800,7 +806,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-merge Git Merge Docs}
    */
-  merge(branchName: string, flags?: MergeFlag | MergeFlag[]) {
+  merge(branchName: string, flags?: MergeFlag | MergeFlag[]): Promise<string> {
     const flagStr = flags
       ? Array.isArray(flags)
         ? `${flags.join(" ")} `
@@ -825,7 +831,10 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-checkout Git Checkout Docs}
    */
-  async checkout(target: string, flags?: CheckoutFlag | CheckoutFlag[]) {
+  async checkout(
+    target: string,
+    flags?: CheckoutFlag | CheckoutFlag[],
+  ): Promise<this> {
     const flagStr = flags
       ? Array.isArray(flags)
         ? `${flags.join(" ")} `
@@ -853,7 +862,10 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-branch Git Branch Docs}
    */
-  branch(name?: string, flags: BranchFlag | BranchFlag[] = []) {
+  branch(
+    name?: string,
+    flags: BranchFlag | BranchFlag[] = [],
+  ): Promise<string> {
     const flagArr = Array.isArray(flags) ? flags : flags ? [flags] : [];
     const parts = ["git branch", ...flagArr, name].filter(Boolean);
     return this.runCommand(parts.join(" "));
@@ -882,7 +894,10 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-describe Git Describe Docs}
    */
-  describe(flags: DescribeFlag | DescribeFlag[], ref?: GitRef) {
+  describe(
+    flags: DescribeFlag | DescribeFlag[],
+    ref?: GitRef,
+  ): Promise<string> {
     const args = [...this.toArray(flags), ref].filter(Boolean);
     return this.runCommand(`git describe ${args.join(" ")}`);
   }
@@ -902,7 +917,7 @@ export class Git {
    *
    * @see {@link Git.describe}
    */
-  getLatestTag() {
+  getLatestTag(): Promise<string> {
     return this.describe(["--tags", "--abbrev=0"]);
   }
 }

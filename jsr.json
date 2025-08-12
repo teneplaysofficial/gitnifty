@@ -1,0 +1,11 @@
+{
+  "$schema": "https://jsr.io/schema/config-file.v1.json",
+  "name": "@tene/gitnifty",
+  "version": "0.0.0",
+  "description": "A robust, promise-based Git utility for Node.js",
+  "license": "Apache-2.0",
+  "exports": "./index.ts",
+  "publish": {
+    "include": ["index.ts"]
+  }
+}
