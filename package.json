@@ -70,6 +70,7 @@
     "hooks": {
       "before:init": "yarn test && yarn docs",
       "before:commit": "git add .",
+      "after:bump": "node -e \"const fs=require('fs');const pkg=JSON.parse(fs.readFileSync('package.json','utf8'));const jsr=JSON.parse(fs.readFileSync('jsr.json','utf8'));jsr.version=pkg.version;fs.writeFileSync('jsr.json',JSON.stringify(jsr,null,2));\"",
       "after:release": "node -e \"const major = require('./package.json').version.split('.')[0]; require('child_process').execSync('git tag -f v' + major + ' && git push -f origin v' + major, { stdio: 'inherit' })\""
     }
   },

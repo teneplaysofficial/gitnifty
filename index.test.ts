@@ -586,4 +586,92 @@ describe("Git", () => {
       );
     });
   });
+
+  describe("describe", () => {
+    it("should run describe with a single flag", async () => {
+      mockExec({ stdout: "v1.2.3-2-gabcdef" });
+
+      const result = await git.describe("--tags");
+
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git describe --tags",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("v1.2.3-2-gabcdef");
+    });
+
+    it("should run describe with multiple flags and a ref", async () => {
+      mockExec({ stdout: "v1.2.3-2-gabcdef-dirty" });
+
+      const result = await git.describe(
+        ["--tags", "--dirty=*", "--abbrev=10"],
+        "HEAD~2",
+      );
+
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git describe --tags --dirty=* --abbrev=10 HEAD~2",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("v1.2.3-2-gabcdef-dirty");
+    });
+
+    it("should run describe with ref only", async () => {
+      mockExec({ stdout: "v0.9.0" });
+
+      const result = await git.describe([], "main");
+
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git describe main",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("v0.9.0");
+    });
+
+    it("should handle no flags or ref", async () => {
+      mockExec({ stdout: "v1.0.0-3-g123abc" });
+
+      const result = await git.describe([]);
+
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git describe ",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("v1.0.0-3-g123abc");
+    });
+  });
+
+  describe("getLatestTag", () => {
+    it("should return the latest tag using --tags --abbrev=0", async () => {
+      mockExec({ stdout: "v3.1.4" });
+
+      const result = await git.getLatestTag();
+
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git describe --tags --abbrev=0",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+      expect(result).toBe("v3.1.4");
+    });
+
+    it("should throw an error if no tag is found", async () => {
+      const errorMessage = "fatal: No tags can describe";
+      mockExec({
+        error: { message: errorMessage } as ExecException,
+        stderr: "fatal: No tags can describe anything.",
+      });
+
+      await expect(git.getLatestTag()).rejects.toThrow(errorMessage);
+
+      expect(mockedExec).toHaveBeenCalledWith(
+        "git describe --tags --abbrev=0",
+        { cwd: customCwd },
+        expect.any(Function),
+      );
+    });
+  });
 });

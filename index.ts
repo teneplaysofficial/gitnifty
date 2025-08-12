@@ -53,6 +53,12 @@ export type ResetFlag =
  * - `--progress`: Force progress reporting.
  * - `--source=<commit-ish>` – Restore from a specific commit, branch, or tag.
  *
+ * @example
+ * - `--source=HEAD` – Restore from the latest commit on current branch.
+ * - `--source=HEAD~1` – Restore from one commit before HEAD.
+ * - `--source=abc1234` – Restore from a specific commit hash.
+ * - `--source=main` – Restore from a named branch.
+ *
  * @see {@link Git.restore}
  */
 export type RestoreFlag =
@@ -60,28 +66,6 @@ export type RestoreFlag =
   | "--worktree"
   | "--quiet"
   | "--progress"
-  | SourceRef;
-
-/**
- * Represents a `--source=<commit-ish>` flag used in `git restore`.
- *
- * The `--source` flag specifies the commit, branch, or tag to restore files from.
- * Examples include:
- *
- * - `--source=HEAD` – Restore from the latest commit on current branch.
- * - `--source=HEAD~1` – Restore from one commit before HEAD.
- * - `--source=abc1234` – Restore from a specific commit hash.
- * - `--source=main` – Restore from a named branch.
- *
- * This type supports valid Git revisions via a template literal.
- *
- * @example
- * ```ts
- * const flag: SourceRef = "--source=HEAD~1";
- * ```
- */
-export type SourceRef =
-  | `--source=${string & { length: 7 | 40 }}`
   | "--source=HEAD"
   | `--source=HEAD~${number}`
   | `--source=${string}`;
@@ -214,6 +198,52 @@ export type BranchFlag =
   | "--list"
   | "--show-current";
 
+/**
+ * Flags used with the `git describe` command to modify its behavior.
+ *
+ * These control how Git generates the description of a commit.
+ *
+ * - `--tags`: Use any tag (including lightweight tags).
+ * - `--all`: Use any ref (tags, branches, etc.).
+ * - `--long`: Always output long format (tag + number of commits + hash).
+ * - `--dirty`: Mark the working tree as dirty if it has local changes.
+ * - `--exact-match`: Only output the tag if the commit matches exactly.
+ * - `--always`: Fallback to abbreviated commit hash if no tag is found.
+ * - `--first-parent`: Follow only the first parent upon traversal.
+ * - `--dirty=<mark>`: Use a custom suffix instead of "-dirty".
+ * - `--abbrev=<n>`: Set the hash abbreviation length.
+ * - `--match=<pattern>`: Only consider tags matching the given glob pattern.
+ * - `--candidates=<n>`: Limit the number of candidate tags considered.
+ *
+ * @see {@link Git.describe}
+ */
+export type DescribeFlag =
+  | "--tags"
+  | "--all"
+  | "--long"
+  | "--dirty"
+  | "--exact-match"
+  | "--always"
+  | "--first-parent"
+  | `--dirty=${string}`
+  | `--abbrev=${number}`
+  | `--match=${string}`
+  | `--candidates=${number}`;
+
+/**
+ * A Git reference to identify a specific commit, branch, or tag.
+ *
+ * This can be used to describe a commit other than the current `HEAD`.
+ *
+ * Common examples:
+ * - `"HEAD"`: The current commit.
+ * - `"HEAD~1"`: One commit before HEAD.
+ * - `"HEAD^2"`: Second parent of a merge commit.
+ * - `"main"` or any branch name.
+ * - A full or abbreviated commit SHA.
+ */
+export type GitRef = "HEAD" | `${"HEAD~" | "HEAD^"}${number}` | string;
+
 // ***** Git Class *****
 
 /**
@@ -299,7 +329,7 @@ export class Git {
    *
    * @throws Throws an error with the command and stderr if execution fails.
    */
-  private runCommand(cmd: string) {
+  private runCommand(cmd: string): Promise<string> {
     return new Promise<string>((resolve, reject) => {
       exec(cmd, { cwd: this.cwd }, (error, stdout, stderr) => {
         if (error) {
@@ -309,6 +339,20 @@ export class Git {
         }
       });
     });
+  }
+
+  /**
+   * Normalizes a value into an array.
+   *
+   * @example
+   * toArray("--tags") // ["--tags"]
+   * toArray(["--tags", "--always"]) // ["--tags", "--always"]
+   *
+   * @param input - A single value or an array of values.
+   * @returns The input wrapped in an array, if not already.
+   */
+  private toArray<T>(input: T | T[]): T[] {
+    return Array.isArray(input) ? input : [input];
   }
 
   /**
@@ -325,7 +369,7 @@ export class Git {
    * console.log(username); // "John Doe"
    * ```
    */
-  getUserName() {
+  getUserName(): Promise<string> {
     return this.runCommand("git config user.name");
   }
 
@@ -346,7 +390,7 @@ export class Git {
    * console.log(name); // "John Doe"
    * ```
    */
-  setUserName(name: string) {
+  setUserName(name: string): Promise<string> {
     return this.runCommand(`git config --global user.name "${name}" `);
   }
 
@@ -364,7 +408,7 @@ export class Git {
    * console.log(email); // "john.doe@example.com"
    * ```
    */
-  getUserEmail() {
+  getUserEmail(): Promise<string> {
     return this.runCommand("git config user.email");
   }
 
@@ -385,7 +429,7 @@ export class Git {
    * console.log(email); // "john.doe@example.com"
    * ```
    */
-  setUserEmail(email: string) {
+  setUserEmail(email: string): Promise<string> {
     return this.runCommand(`git config --global user.email "${email}"`);
   }
 
@@ -401,7 +445,7 @@ export class Git {
    * console.log(clean); // true if working directory has no unstaged changes
    * ```
    */
-  hasNoUnstagedChanges() {
+  hasNoUnstagedChanges(): Promise<boolean> {
     return this.tryCommand(() => this.runCommand("git diff --quiet"));
   }
 
@@ -417,7 +461,7 @@ export class Git {
    * console.log(clean); // true if nothing is staged for commit
    * ```
    */
-  hasNoStagedChanges() {
+  hasNoStagedChanges(): Promise<boolean> {
     return this.tryCommand(() => this.runCommand("git diff --cached --quiet"));
   }
 
@@ -436,7 +480,7 @@ export class Git {
    * @see {@link hasNoUnstagedChanges} To check if working directory has unstaged changes.
    * @see {@link hasNoStagedChanges} To check if working directory has staged but uncommitted changes.
    */
-  async isWorkingDirClean() {
+  async isWorkingDirClean(): Promise<boolean> {
     const unstagedClean = await this.hasNoUnstagedChanges();
     const stagedClean = await this.hasNoStagedChanges();
     return unstagedClean && stagedClean;
@@ -454,7 +498,7 @@ export class Git {
    * console.log(hasUpstream); // true (if upstream is set), false (if not)
    * ```
    */
-  hasUpstreamBranch() {
+  hasUpstreamBranch(): Promise<boolean> {
     return this.tryCommand(() =>
       this.runCommand("git rev-parse --abbrev-ref --symbolic-full-name @{u}"),
     );
@@ -474,7 +518,7 @@ export class Git {
    * console.log(branch); // "main"
    * ```
    */
-  getCurrentBranchName() {
+  getCurrentBranchName(): Promise<string> {
     return this.runCommand("git rev-parse --abbrev-ref HEAD");
   }
 
@@ -494,7 +538,7 @@ export class Git {
    * console.log(defaultBranch); // "main" or "master"
    * ```
    */
-  getDefaultBranchName = async () => {
+  getDefaultBranchName = async (): Promise<string> => {
     const branches = await this.runCommand("git branch -r");
     const defaultBranch = branches
       .split("\n")
@@ -525,7 +569,7 @@ export class Git {
    * await git.add(); // stages everything (default ".")
    * ```
    */
-  add(path: string | string[] = ".") {
+  add(path: string | string[] = "."): Promise<string> {
     const normalizedPath = Array.isArray(path) ? path.join(" ") : path;
     return this.runCommand(`git add ${normalizedPath} `);
   }
@@ -554,7 +598,7 @@ export class Git {
    * await git.reset("abc1234", "--hard"); // Hard reset to commit
    * ```
    */
-  reset(hashValue: string, flag?: ResetFlag) {
+  reset(hashValue: string, flag?: ResetFlag): Promise<string> {
     const parts = ["git reset", flag, hashValue].filter(Boolean);
     return this.runCommand(parts.join(" "));
   }
@@ -585,7 +629,10 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-restore | git restore - Official Git Docs}
    */
-  restore(target: string | string[] = ".", flag?: RestoreFlag) {
+  restore(
+    target: string | string[] = ".",
+    flag?: RestoreFlag,
+  ): Promise<string> {
     const normalizedTarget = Array.isArray(target) ? target.join(" ") : target;
     const flagPart = flag ? ` ${flag}` : "";
     return this.runCommand(`git restore${flagPart} ${normalizedTarget}`);
@@ -615,7 +662,10 @@ export class Git {
    * @see {@link CommitFlag} for supported commit flags
    * @see {@link https://git-scm.com/docs/git-commit Git Commit Docs}
    */
-  async commit(message: string, flags?: CommitFlag | CommitFlag[]) {
+  async commit(
+    message: string,
+    flags?: CommitFlag | CommitFlag[],
+  ): Promise<this> {
     const flagsPart = flags
       ? Array.isArray(flags)
         ? ` ${flags.join(" ")}`
@@ -641,7 +691,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-init Git Init Docs}
    */
-  async init() {
+  async init(): Promise<this> {
     await this.runCommand("git init");
     return this;
   }
@@ -661,7 +711,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-clone Git Clone Docs}
    */
-  async clone(url: string, dir: string = "") {
+  async clone(url: string, dir: string = ""): Promise<this> {
     await this.runCommand(`git clone ${url} ${dir}`);
     return this;
   }
@@ -688,7 +738,7 @@ export class Git {
     remote: string | PushFlag[] = "origin",
     branch = "",
     flags: PushFlag | PushFlag[] = [],
-  ) {
+  ): Promise<this> {
     let finalRemote = "origin";
     let finalBranch = "";
     let finalFlags: PushFlag[] = [];
@@ -731,7 +781,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-tag Git Tag Docs}
    */
-  tag(value: string, flags?: TagFlag | TagFlag[]) {
+  tag(value: string, flags?: TagFlag | TagFlag[]): Promise<string> {
     const flagStr = flags
       ? Array.isArray(flags)
         ? `${flags.join(" ")} `
@@ -756,7 +806,7 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-merge Git Merge Docs}
    */
-  merge(branchName: string, flags?: MergeFlag | MergeFlag[]) {
+  merge(branchName: string, flags?: MergeFlag | MergeFlag[]): Promise<string> {
     const flagStr = flags
       ? Array.isArray(flags)
         ? `${flags.join(" ")} `
@@ -781,7 +831,10 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-checkout Git Checkout Docs}
    */
-  async checkout(target: string, flags?: CheckoutFlag | CheckoutFlag[]) {
+  async checkout(
+    target: string,
+    flags?: CheckoutFlag | CheckoutFlag[],
+  ): Promise<this> {
     const flagStr = flags
       ? Array.isArray(flags)
         ? `${flags.join(" ")} `
@@ -809,9 +862,62 @@ export class Git {
    *
    * @see {@link https://git-scm.com/docs/git-branch Git Branch Docs}
    */
-  branch(name?: string, flags: BranchFlag | BranchFlag[] = []) {
+  branch(
+    name?: string,
+    flags: BranchFlag | BranchFlag[] = [],
+  ): Promise<string> {
     const flagArr = Array.isArray(flags) ? flags : flags ? [flags] : [];
     const parts = ["git branch", ...flagArr, name].filter(Boolean);
     return this.runCommand(parts.join(" "));
+  }
+
+  /**
+   * Runs `git describe` to generate a human-readable identifier for a commit.
+   *
+   * This wraps the `git describe` command and returns a string such as
+   * `v1.2.3-2-gabcdef` based on the most recent tag and commit information.
+   *
+   * @param flags - One or more optional `git describe` flags to customize the output.
+   * Can be a single flag or an array of flags.
+   *
+   * @param ref - Optional Git reference to describe (e.g., a branch, tag, or commit hash).
+   * Defaults to `HEAD` if not provided.
+   *
+   * @returns A promise that resolves with the `git describe` output.
+   *
+   * @example
+   * ```ts
+   * await git.describe("--tags");
+   * await git.describe(["--tags", "--long"], "main");
+   * await git.describe(["--dirty=*", "--abbrev=10"], "HEAD~2");
+   * ```
+   *
+   * @see {@link https://git-scm.com/docs/git-describe Git Describe Docs}
+   */
+  describe(
+    flags: DescribeFlag | DescribeFlag[],
+    ref?: GitRef,
+  ): Promise<string> {
+    const args = [...this.toArray(flags), ref].filter(Boolean);
+    return this.runCommand(`git describe ${args.join(" ")}`);
+  }
+
+  /**
+   * Retrieves the latest reachable Git tag (e.g., `v1.2.3`) without commit metadata.
+   *
+   * This uses `git describe --tags --abbrev=0` to return only the most recent tag name,
+   * ignoring additional suffixes like commit counts or hashes.
+   *
+   * @returns A promise that resolves with the latest tag as a string.
+   *
+   * @example
+   * ```ts
+   * await git.getLatestTag(); // "v1.2.3"
+   * ```
+   *
+   * @see {@link Git.describe}
+   */
+  getLatestTag(): Promise<string> {
+    return this.describe(["--tags", "--abbrev=0"]);
   }
 }
