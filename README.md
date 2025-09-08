@@ -31,6 +31,15 @@ yarn add gitnifty
 npm install gitnifty
 ```
 
+## Features
+
+- **Smart Commands** - Get common Git info without writing raw shell logic.
+- **Promise-based** - Easy async integration with modern toolchains.
+- **Error-resilient** - Graceful handling for missing remotes or configs.
+- **Automation-ready** - Perfect for CLI tools, devops, and build scripts.
+- **Zero dependencies** - Lightweight and focused.
+- **TypeScript Support** - Fully typed API for better DX.
+
 ## Usage
 
 GitNifty exposes a `Git` class that can be used to interact with a Git repository via common commands like `user`, `currentBranch`, `checkWorkingDirClean`, and more.
@@ -58,15 +67,6 @@ async function main() {
 
 main();
 ```
-
-## Features
-
-- **Smart Commands** - Get common Git info without writing raw shell logic.
-- **Promise-based** - Easy async integration with modern toolchains.
-- **Error-resilient** - Graceful handling for missing remotes or configs.
-- **Automation-ready** - Perfect for CLI tools, devops, and build scripts.
-- **Zero dependencies** - Lightweight and focused.
-- **TypeScript Support** - Fully typed API for better DX.
 
 ## API
 
